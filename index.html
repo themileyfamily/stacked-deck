@@ -314,6 +314,55 @@ h1.brand small { line-height: 1; font-size: clamp(14px, 3.6vw, 20px); color: var
 @keyframes sinkp { to { transform: translateY(60px); opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .cw, .cs, .fr::after, .swipe, .packbtn.rip .pk-top, .packbtn.rip .pk-bot { animation: none !important; } }
 
+
+/* ===== Rip Packs: open-spots strip, zoom view, phone portrait layout ===== */
+.slots { display: flex; flex-wrap: wrap; gap: 4px; }
+.slots span { font-family: var(--display); font-weight: 800; font-size: 13px; letter-spacing: .04em; padding: 2px 6px; border-radius: 4px; line-height: 1.2; }
+.slots .o { color: var(--amber); box-shadow: inset 0 0 0 1.5px var(--amber-dim); }
+.slots .f { color: #6f8578; background: rgba(255, 255, 255, .05); text-decoration: line-through; }
+.lg-short { display: none; }
+.draft .odd { display: none; }
+.round .sadv { display: none; }
+@media (hover: none) { .draft:hover { background: var(--chalk); } }
+.btn.go small { font-size: .7em; letter-spacing: .04em; }
+.pzoom { position: fixed; inset: 0; z-index: 60; background: rgba(4, 10, 7, .82); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); display: flex; align-items: flex-start; justify-content: center; overflow-y: auto; padding: calc(env(safe-area-inset-top) + 18px) 16px calc(env(safe-area-inset-bottom) + 18px); }
+.pzbox { width: min(100%, 340px); display: flex; flex-direction: column; gap: 10px; margin: auto 0; }
+.pzcard { width: min(78vw, 320px, calc((100vh - 230px) * .67)); margin: 0 auto; }
+.pzbox .picks { justify-content: center; }
+.pzbox .pk-lbl { color: #b9c6bd; }
+.pzbtns { display: flex; gap: 8px; } .pzbtns .btn { flex: 1; }
+html.pz-on, html.pz-on body { overflow: hidden; }
+@media all {  /* the pack column is phone width on every screen */
+  #papp .top { display: none; }
+  .round { font-size: 15px; align-items: center; }
+  .round span + span { display: none; }
+  .round .sadv { display: inline-flex; align-items: center; min-height: 30px; padding: 2px 10px; font-family: var(--body); font-size: 13px; letter-spacing: 0; text-transform: none; }
+  .pmeter i { width: 12px; height: 17px; }
+  .banner { font-size: 14px; padding: 2px 8px; }
+  .lg-long { display: none; } .lg-short { display: block; margin: 0; }
+  .packbtn { width: min(54vw, 210px); }
+  .spin > .actions:not(.pact) .btn.go { width: 100%; }
+  .cards { overflow: visible; scroll-snap-type: none; justify-content: center; gap: 8px; padding: 2px 0 4px; }
+  .cw { flex: 0 0 calc((100% - 16px) / 3); min-width: 0; gap: 5px; }
+  .cw .pk-lbl, .cw .pc-hint, .cw .vd { display: none; }
+  .cw .picks { flex-direction: column; gap: 4px; }
+  .cw .pick { min-width: 0; width: 100%; }
+  .cw .draft { width: 100%; min-height: 36px; padding: 4px 6px; font-size: 14px; display: flex; align-items: center; gap: 4px; border-radius: 6px; border-bottom: 0; border-left: 5px solid #8b968e; }
+  .cw .draft span { margin: 0; }
+  .cw .draft .odd { display: block; margin-left: auto; font-style: normal; font-size: 11px; font-weight: 700; color: #56685d; }
+  .cw .pick.go .draft { border-left-color: #3fa457; } .cw .pick.mid .draft { border-left-color: var(--amber); }
+  .cw .pc-done, .cw .pc-none { font-size: 12px; line-height: 1.25; }
+  .pact { position: sticky; bottom: 0; z-index: 5; margin: 0 -12px; padding: 10px 12px calc(10px + env(safe-area-inset-bottom)); background: rgba(21, 42, 32, .94); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); border-top: 1px solid var(--line); flex-wrap: nowrap; }
+  .pact .btn { flex: 0 0 auto; } .pact .btn.go { flex: 1 1 auto; font-size: 20px; padding: 6px 10px; white-space: nowrap; }
+}
+/* phone in landscape: cards sized to the screen height, zoom view with the card beside its buttons */
+@media (max-height: 520px) and (orientation: landscape) {
+  .cw { flex-basis: min(calc((100% - 16px) / 3), calc((100vh - 150px) * .67)); }
+  .packbtn { width: min(30vw, calc((100vh - 120px) * .67)); }
+  .pzbox { width: min(100%, 680px); display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; column-gap: 18px; row-gap: 10px; }
+  .pzcard { width: calc((100vh - 48px) * .67); grid-row: 1 / span 4; }
+}
+
 /* ===== iPhone app shell ===== */
 :root { --r: 14px; --nav-h: 52px; }
 [hidden] { display: none !important; }
@@ -1636,19 +1685,38 @@ if (typeof module !== "undefined") module.exports = makePackEngine;
       if (taken) h += '<div class="pc-done">Drafted at ' + taken + '</div>';
       else if (!fit.length) h += '<div class="pc-none">No open spot</div>';
       else {
-        var ok = fit.filter(function (j) { return safeSlot(c, c.sl[j]); });
-        h += '<div class="pk-lbl">Draft at (rating there)</div><div class="picks">' + ok.map(function (j) {
-          var rr = Math.round(c.r[j] * 100), lbl = 'Draft at ' + c.sl[j] + ', rating ' + rr;
-          if (!OC) return '<button class="draft" data-pt="' + c.uid + '" data-ps="' + c.sl[j] + '" aria-label="' + lbl + '"><b>' + c.sl[j] + '</b> <span>' + rr + '</span></button>';
-          /* advice: under 50% chance of a better one later = draft now; 50-79 = toss-up; 80+ = can wait */
-          var o = Math.round(100 * PE.betterOdds(OC, c.sl[j], c.r[j], P.left)), v = o < 50 ? ["go", "Draft now"] : o < 80 ? ["mid", "Toss-up"] : ["wait", "Can wait"];
-          return '<div class="pick ' + v[0] + '"><button class="draft" data-pt="' + c.uid + '" data-ps="' + c.sl[j] + '" aria-label="' + lbl + '. ' + v[1] + ': ' + o + ' percent chance of a better ' + c.sl[j] + ' later"><b>' + c.sl[j] + '</b> <span>' + rr + '</span></button>' +
-            '<span class="vd"><b>' + v[1] + '</b><i>' + o + '% better later</i></span></div>';
-        }).join("") + '</div>';
+        h += picksHtml(c, fit);
       }
       h += '<div class="pc-hint">' + (cs === 1 ? "Tap card for stats" : "Tap card for front") + '</div>';
     }
     return h + '</div>';
+  }
+
+  /* draft buttons for card c at the open spots it fits; advice: under 50% chance of a better one later = draft now; 50-79 = toss-up; 80+ = can wait */
+  function picksHtml(c, fit) {
+    var ok = fit.filter(function (j) { return safeSlot(c, c.sl[j]); });
+    return '<div class="pk-lbl">Draft at (rating there)</div><div class="picks">' + ok.map(function (j) {
+      var rr = Math.round(c.r[j] * 100), lbl = 'Draft at ' + c.sl[j] + ', rating ' + rr;
+      if (!OC) return '<div class="pick"><button class="draft" data-pt="' + c.uid + '" data-ps="' + c.sl[j] + '" aria-label="' + lbl + '"><b>' + c.sl[j] + '</b> <span>' + rr + '</span></button></div>';
+      var o = Math.round(100 * PE.betterOdds(OC, c.sl[j], c.r[j], P.left)), v = o < 50 ? ["go", "Draft now"] : o < 80 ? ["mid", "Toss-up"] : ["wait", "Can wait"];
+      return '<div class="pick ' + v[0] + '"><button class="draft" data-pt="' + c.uid + '" data-ps="' + c.sl[j] + '" aria-label="' + lbl + '. ' + v[1] + ': ' + o + ' percent chance of a better ' + c.sl[j] + ' later"><b>' + c.sl[j] + '</b> <span>' + rr + '</span><i class="odd">' + o + '%</i></button>' +
+        '<span class="vd"><b>' + v[1] + '</b><i>' + o + '% better later</i></span></div>';
+    }).join("") + '</div>';
+  }
+  /* phone portrait: cards sit three across, so a revealed card opens big in a zoom view instead of flipping in place */
+  function compact() { return !!(window.matchMedia && window.matchMedia("all").matches); }
+  function zoomHtml() {
+    var c = P.pack && P.pack.cards.filter(function (x) { return String(x.uid) === String(P.zoom); })[0];
+    if (!c) { P.zoom = null; return ""; }
+    var open = PE.openMap(openSlots()), taken = P.pack.taken[c.uid], fit = PE.fitSlots(c, open), best = 0;
+    c.r.forEach(function (r, j) { if ((taken ? c.sl[j] === taken : open[c.sl[j]]) && r > best) best = r; });
+    if (!best) best = Math.max.apply(null, c.r);
+    var h = '<div class="pzoom" role="dialog" aria-modal="true" aria-label="' + esc(c.n) + '"><div class="pzbox"><div class="cs pzcard"' + (window.CARD_IMG ? ' style="aspect-ratio:848 / 1264"' : '') + ' data-pzf="1" role="button" tabindex="0" aria-label="Flip card">' +
+      (P.zside ? backHtml(c) : frontHtml(c, best)) + '</div>';
+    if (taken) h += '<div class="pc-done">Drafted at ' + taken + '</div>';
+    else if (!fit.length) h += '<div class="pc-none">No open spot</div>';
+    else h += picksHtml(c, fit);
+    return h + '<div class="pzbtns"><button class="btn" data-pa="zflip">' + (P.zside ? "Card front" : "Stats") + '</button><button class="btn" data-pa="zclose">Close</button></div></div></div>';
   }
 
   function sealedNote(left) {
@@ -1664,6 +1732,9 @@ if (typeof module !== "undefined") module.exports = makePackEngine;
   function packPanel() {
     var n = P.picks.length, left = 11 - n, h = '<div class="spin"><div class="round"><span>Packs left <b>' + P.left + '</b> of ' + LIMIT + '</span><span>' + left + ' spot' + (left === 1 ? "" : "s") + ' to fill</span></div>';
     h += '<div class="pmeter" aria-hidden="true">' + Array.apply(null, Array(LIMIT)).map(function (_, i) { return '<i class="' + (i < P.left ? "on" : "") + '"></i>'; }).join("") + '</div>';
+    var openNow = PE.openMap(openSlots());
+    h += '<div class="slots" aria-label="Open spots">' + SL.map(function (sl) { return '<span class="' + (openNow[sl] ? "o" : "f") + '">' + sl + '</span>'; }).join("") + '</div>';
+    h = h.replace('</span></div><div class="pmeter"', '</span><button class="mini sadv' + (SHOWODDS ? ' on' : '') + '" data-pa="odds" aria-pressed="' + SHOWODDS + '">Advice ' + (SHOWODDS ? 'on' : 'off') + '</button></div><div class="pmeter"');
     if (P.stage === "sealed") {
       if (!P.pending && P.left > 0) P.pending = PE.dealPack(openSlots(), drafted(), Math.random, null, needFor(P.left), P.left === 1);
       h += '<div class="packbox"><div class="packbtn" id="packdrag" role="button" tabindex="0" aria-label="' + packDec() + 's pack. Swipe across the top to open">' + packSvg() + '<div class="swipe">Swipe the top to rip</div></div></div><div class="actions"><button class="btn go" data-pa="rip">Rip it open</button>' +
@@ -1675,13 +1746,15 @@ if (typeof module !== "undefined") module.exports = makePackEngine;
       if (SHOWODDS && P.left > 0) { var gone = drafted(); P.pack.cards.forEach(function (c) { gone[c.id] = 1; }); OC = PE.oddsCtx(openSlots(), gone); } else OC = null;
       var inPack = P.pack.cards.filter(function (c) { return !P.pack.taken[c.uid]; });
       h += '<div class="banner">' + P.pack.dec + 's pack' + (P.left === 0 ? ' - last pack' : '') + '</div>';
-      h += '<p class="legend">Buttons: spots he can play, rated 0 to 100 against all decades.' +
+      h += '<p class="legend lg-long">Buttons: spots he can play, rated 0 to 100 against all decades.' +
         (SHOWODDS && P.left > 0 ? ' %: chance of a better one later. <span class="go">Draft now</span> under 50%, <span class="mid">Toss-up</span> 50 to 79%, <span class="wait">Can wait</span> 80%+.' : '') + '</p>';
-      h += '<div class="cards">' + (inPack.length ? inPack.map(cardHtml).join("") : '<p class="note" style="text-align:center;width:100%">All 3 cards drafted.</p>') + '</div><div class="actions">';
+      h += '<p class="legend lg-short">' + (hidden ? 'Tap a card to reveal it. ' : 'Tap a card to see it big. ') + 'Buttons: spot and rating' +
+        (SHOWODDS && P.left > 0 ? ', % = chance of a better one later: <span class="go">draft now</span>, <span class="mid">toss-up</span>, <span class="wait">can wait</span>.' : '.') + '</p>';
+      h += '<div class="cards">' + (inPack.length ? inPack.map(cardHtml).join("") : '<p class="note" style="text-align:center;width:100%">All 3 cards drafted.</p>') + '</div><div class="actions pact">';
       if (hidden) h += '<button class="btn" data-pa="revealall">Reveal all</button>';
       var k = takenCount(), lastPack = P.left === 0, fitsLeft = P.pack.cards.some(function (c) { return !P.pack.taken[c.uid] && PE.fitSlots(c, PE.openMap(openSlots())).length; });
-      if (k > 0) h += '<button class="btn" data-pa="undo">Undo last pick</button>';
-      if (!lastPack) h += '<button class="btn go" data-pa="next">' + (k >= 1 ? 'Rip next pack' : 'Pass, rip next pack') + ' (' + P.left + ' left)</button>';
+      if (k > 0) h += '<button class="btn" data-pa="undo">Undo</button>';
+      if (!lastPack) h += '<button class="btn go" data-pa="next">' + (k >= 1 ? 'Next pack' : 'Pass') + ' <small>(' + P.left + ' left)</small></button>';
       else h += '<button class="btn go" data-pa="finish">Finish draft</button>';
       var msg, need = P.pack.need || 1, rem = need - k, opn = openSlots().length;
       if (lastPack) {
@@ -1694,8 +1767,7 @@ if (typeof module !== "undefined") module.exports = makePackEngine;
           (opn > 3 * P.left ? ' <span class="last">Not enough packs left to finish.</span>' : (extra -= (k === 0 ? 1 : 0)) <= 0 ? '' :
             ' To skip the last-pack gamble: ' + extra + ' extra card' + (extra === 1 ? '' : 's') + ' (a 2nd or 3rd from a pack).');
       }
-      h += '<p class="note">' + msg + '</p>';
-      h += '</div>';
+      h += '</div><p class="note">' + msg + '</p>';
     }
     return h + '</div>';
   }
@@ -1750,7 +1822,8 @@ if (typeof module !== "undefined") module.exports = makePackEngine;
     var head = '<div class="top"><h1 class="brand">' + (window.SD_LOGO || 'Stacked Deck') + '<small>Packs</small></h1><span class="topb"><button class="mini' + (SHOWODDS ? ' on' : '') + '" data-pa="odds" aria-pressed="' + SHOWODDS + '">Advice: ' + (SHOWODDS ? 'on' : 'off') + '</button><button class="mini" data-pa="help">How it works</button></span></div>';
     if (window.CARD_IMG) head += window.__imgOK === false ? '<p class="imgnote bad">Your card images are not loading, so cards use the built-in drawings. Open <b>index.html</b> from the <b>Stacked Deck</b> folder in Chrome or Edge, with the <b>cards</b> folder next to it.</p>' :
       (window.__imgOK ? '<p class="imgnote ok">Your card images are on.</p>' : '<p class="imgnote">Checking your card images...</p>');
-    root.innerHTML = head + (P.done ? resultHtml() : packPanel()) + parkHtml() + (P.done ? tableHtml() : "");
+    root.innerHTML = head + (P.done ? resultHtml() : packPanel()) + parkHtml() + (P.done ? tableHtml() : "") + (P.zoom && P.stage === "open" ? zoomHtml() : "");
+    document.documentElement.classList.toggle("pz-on", !!(P.zoom && P.stage === "open"));
     if (P.pack && P.pack.anim) { var pk = P.pack; setTimeout(function () { pk.anim = false; }, 2400); }
   }
   function deal() {
@@ -1765,9 +1838,11 @@ if (typeof module !== "undefined") module.exports = makePackEngine;
   function act(a) {
     if (a === "rip" && P.stage === "sealed" && P.left > 0) deal();
     else if (a === "undo" && P.stage === "open" && P.pack.order.length) { var u = P.pack.order.pop(); delete P.pack.taken[u]; P.picks.pop(); render(); }
-    else if (a === "finish" && P.stage === "open" && P.left === 0) { P.done = true; P.forfeit = openSlots().length > 0; P.stage = "sealed"; P.pack = null; render(); window.scrollTo(0, 0); }
-    else if (a === "next" && P.stage === "open" && P.left > 0 && !P.busy) { P.pack = null; P.stage = "sealed"; P.msg = ""; render(); window.scrollTo(0, 0); }
+    else if (a === "finish" && P.stage === "open" && P.left === 0) { P.zoom = null; P.done = true; P.forfeit = openSlots().length > 0; P.stage = "sealed"; P.pack = null; render(); window.scrollTo(0, 0); }
+    else if (a === "next" && P.stage === "open" && P.left > 0 && !P.busy) { P.zoom = null; P.pack = null; P.stage = "sealed"; P.msg = ""; render(); window.scrollTo(0, 0); }
     else if (a === "odds") { setOdds(!SHOWODDS); render(); }
+    else if (a === "zclose") { P.zoom = null; render(); }
+    else if (a === "zflip" && P.zoom) { P.zside = !P.zside; render(); }
     else if (a === "revealall" && P.pack) { P.pack.anim = false; P.pack.cards.forEach(function (c) { if (!P.pack.cs[c.uid]) P.pack.cs[c.uid] = 1; }); render(); }
     else if (a === "again") { P = fresh(); render(); }
     else if (a === "help") document.getElementById("phelp").showModal();
@@ -1778,6 +1853,7 @@ if (typeof module !== "undefined") module.exports = makePackEngine;
     var c = P.pack.cards.filter(function (x) { return String(x.uid) === String(uid); })[0];
     if (!c || P.pack.taken[c.uid] || !P.pack.cs[c.uid]) return;
     var open = PE.openMap(openSlots()); if (!open[slot]) return;
+    if (P.zoom) { P.zoom = null; var zv = root.querySelector(".pzoom"); if (zv) zv.remove(); document.documentElement.classList.remove("pz-on"); }
     var j = c.sl.indexOf(slot); if (j < 0) return;
     var commit = function () {
       P.busy = false;
@@ -1793,6 +1869,7 @@ if (typeof module !== "undefined") module.exports = makePackEngine;
     if (P.stage !== "open" || !P.pack) return;
     var el = root.querySelector('[data-pc="' + uid + '"]'); P.pack.anim = false;
     var cur = P.pack.cs[uid] || 0, nxt = cur === 0 ? 1 : (cur === 1 ? 2 : 1);
+    if (cur > 0 && compact()) { P.zoom = uid; P.zside = false; render(); return; }
     var go = function () { P.pack.cs[uid] = nxt; P.pack.pop = uid; render(); P.pack.pop = null; };
     if (el && !reduce) { el.classList.add("swap"); setTimeout(go, 220); } else go();
   }
@@ -1817,10 +1894,13 @@ if (typeof module !== "undefined") module.exports = makePackEngine;
   }
   root.addEventListener("pointerup", endDrag); root.addEventListener("pointercancel", endDrag);
   root.addEventListener("keydown", function (e) {
+    if (e.key === "Escape" && P.zoom) { act("zclose"); return; }
     if ((e.key === "Enter" || e.key === " ") && e.target.closest("#packdrag")) { e.preventDefault(); act("rip"); }
     else if ((e.key === "Enter" || e.key === " ") && e.target.dataset && e.target.dataset.pc) { e.preventDefault(); flip(e.target.dataset.pc); }
   });
   document.addEventListener("click", function (e) {
+    if (e.target.classList && e.target.classList.contains("pzoom")) { act("zclose"); return; }
+    if (e.target.closest("[data-pzf]") && root.contains(e.target) && !e.target.closest("button")) { act("zflip"); return; }
     var cc = e.target.closest("[data-pc]");
     if (cc && root.contains(cc) && !e.target.closest("button")) { flip(cc.dataset.pc); return; }
     var t = e.target.closest("[data-pa],[data-pt]");
