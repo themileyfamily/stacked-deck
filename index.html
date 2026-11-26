@@ -322,6 +322,11 @@ h1.brand small { line-height: 1; font-size: clamp(14px, 3.6vw, 20px); color: var
 .slots .f { color: #6f8578; background: rgba(255, 255, 255, .05); text-decoration: line-through; }
 .lg-short { display: none; }
 .draft .odd { display: none; }
+/* advice meter: the button fills left to right, red (a better one is likely) to green (take him now) */
+.draft.meter, .draft.meter:hover { background: linear-gradient(90deg, var(--c) 0 var(--f), var(--chalk) var(--f) 100%); border-bottom: 0; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .12); }
+.draft.meter span { color: #23362b; }
+.pick.go .vd b, .pick.mid .vd b, .pick.wait .vd b { color: var(--chalk); }
+.draft.meter:active { filter: brightness(.92); }
 .round .sadv { display: none; }
 @media (hover: none) { .draft:hover { background: var(--chalk); } }
 .btn.go small { font-size: .7em; letter-spacing: .04em; }
@@ -349,8 +354,8 @@ html.pz-on, html.pz-on body { overflow: hidden; }
   .cw .pick { min-width: 0; width: 100%; }
   .cw .draft { width: 100%; min-height: 36px; padding: 4px 6px; font-size: 14px; display: flex; align-items: center; gap: 4px; border-radius: 6px; border-bottom: 0; border-left: 5px solid #8b968e; }
   .cw .draft span { margin: 0; }
-  .cw .draft .odd { display: block; margin-left: auto; font-style: normal; font-size: 11px; font-weight: 700; color: #56685d; }
-  .cw .pick.go .draft { border-left-color: #3fa457; } .cw .pick.mid .draft { border-left-color: var(--amber); }
+
+  .cw .draft.meter { border-left: 0; padding-left: 8px; }
   .cw .pc-done, .cw .pc-none { font-size: 12px; line-height: 1.25; }
   .pact { position: sticky; bottom: 0; z-index: 5; margin: 0 -12px; padding: 10px 12px calc(10px + env(safe-area-inset-bottom)); background: rgba(21, 42, 32, .94); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); border-top: 1px solid var(--line); flex-wrap: nowrap; }
   .pact .btn { flex: 0 0 auto; } .pact .btn.go { flex: 1 1 auto; font-size: 20px; padding: 6px 10px; white-space: nowrap; }
@@ -551,7 +556,7 @@ dialog .btn { width: 100%; min-height: 50px; border-radius: 14px; position: stic
     <li>The last pack is a gamble. With 1 open spot it can fill it 95% of the time, with 2 open spots it can fill both 70% of the time, and with 3 open spots it can fill all three 30% of the time. Any spot left empty is a forfeit. Fill your roster in the first 9 packs (11 spots, so take a second card from at least 2 packs) and you never have to gamble.</li>
     <li>Every spot comes up about equally often: about 1 card in 8 can play any given spot, so a 10-pack draft deals about 4 cards for each spot. Packs also lean toward the spots you still need: a card that fits one of your open spots (other than DH) is 1.5 times as likely as one that doesn't. Most cards are hitters because every hitter can also play DH. Relievers start in the 1950s, so later packs carry more of them.</li>
     <li>Negro Leagues stars (1920s to 1940s) and Japanese stars from NPB (1960s to 1990s) appear in their decades. Their stats are scaled to 162 games and rated on the same scale as major leaguers. NPB cards show n/a for WAR because none is on record, so their rating comes from their stats against major leaguers of the same decade.</li>
-    <li><b>Draft advice</b> shows under each draft button. The % is the chance that a higher-rated player for that spot turns up in your remaining packs if you leave the spot open. Under 50%: <b>Draft now</b> (green). 50 to 79%: <b>Toss-up</b> (amber). 80% or more: <b>Can wait</b> (gray). The chance drops with every pack you rip, so a player marked Can wait early can turn into Draft now later. It is an estimate from the pack odds and does not count your pace: the note under the buttons tells you when you need extra cards. It does not show on the last pack. The Advice button at the top turns it on or off.</li>
+    <li><b>Draft advice</b> fills each draft button left to right. A full green button means a better player for that spot is unlikely to turn up in your remaining packs: take him now. A short red button means a better one is likely later. In between (yellow) could go either way. The meter is the chance that no better player turns up, so it grows with every pack you rip: a short red button early can turn green later. It is an estimate from the pack odds and does not count your pace: the note under the buttons tells you when you need extra cards. It does not show on the last pack. The Advice button at the top turns it on or off.</li>
     <li>Card types: Common is a decade average. All-Star averages his top 3 All-Star seasons in the decade. MVP and Cy Young cards are award seasons. Reliever of the Year cards are award seasons. Hall of Fame cards are the player's best season in any decade.</li>
     <li>Each card is rated 0 to 100 against every card at that spot from all decades, by WAR per 162 games: oWAR plus dWAR in the field, oWAR at DH, and pitching WAR for starters and relievers. A 1920s card and a 2010s card with the same WAR get the same rating. The buttons under a card are the spots he can play, with his rating at each one; a player can rate differently at two spots because each spot has its own pool. Your record comes from the combined rating of the 11 players.</li>
   </ul>
@@ -1698,9 +1703,11 @@ if (typeof module !== "undefined") module.exports = makePackEngine;
     return '<div class="pk-lbl">Draft at (rating there)</div><div class="picks">' + ok.map(function (j) {
       var rr = Math.round(c.r[j] * 100), lbl = 'Draft at ' + c.sl[j] + ', rating ' + rr;
       if (!OC) return '<div class="pick"><button class="draft" data-pt="' + c.uid + '" data-ps="' + c.sl[j] + '" aria-label="' + lbl + '"><b>' + c.sl[j] + '</b> <span>' + rr + '</span></button></div>';
-      var o = Math.round(100 * PE.betterOdds(OC, c.sl[j], c.r[j], P.left)), v = o < 50 ? ["go", "Draft now"] : o < 80 ? ["mid", "Toss-up"] : ["wait", "Can wait"];
-      return '<div class="pick ' + v[0] + '"><button class="draft" data-pt="' + c.uid + '" data-ps="' + c.sl[j] + '" aria-label="' + lbl + '. ' + v[1] + ': ' + o + ' percent chance of a better ' + c.sl[j] + ' later"><b>' + c.sl[j] + '</b> <span>' + rr + '</span><i class="odd">' + o + '%</i></button>' +
-        '<span class="vd"><b>' + v[1] + '</b><i>' + o + '% better later</i></span></div>';
+      /* the button fills left to right with how strongly to take him now: full and green = a better one is unlikely, short and red = a better one is likely later */
+      var o = PE.betterOdds(OC, c.sl[j], c.r[j], P.left), f = Math.max(0.08, 1 - o), hue = Math.round(120 * f);
+      var v = o < 0.5 ? ["go", "Draft now", "A better one is unlikely"] : o < 0.8 ? ["mid", "Toss-up", "Could go either way"] : ["wait", "Can wait", "A better one is likely later"];
+      return '<div class="pick ' + v[0] + '"><button class="draft meter" style="--f:' + Math.round(f * 100) + '%;--c:hsl(' + hue + ',62%,62%)" data-pt="' + c.uid + '" data-ps="' + c.sl[j] + '" aria-label="' + lbl + '. ' + v[1] + ': ' + v[2] + '"><b>' + c.sl[j] + '</b> <span>' + rr + '</span></button>' +
+        '<span class="vd"><b>' + v[1] + '</b><i>' + v[2] + '</i></span></div>';
     }).join("") + '</div>';
   }
   /* phone portrait: cards sit three across, so a revealed card opens big in a zoom view instead of flipping in place */
@@ -1748,8 +1755,8 @@ if (typeof module !== "undefined") module.exports = makePackEngine;
       h += '<div class="banner">' + P.pack.dec + 's pack' + (P.left === 0 ? ' - last pack' : '') + '</div>';
       h += '<p class="legend lg-long">Buttons: spots he can play, rated 0 to 100 against all decades.' +
         (SHOWODDS && P.left > 0 ? ' %: chance of a better one later. <span class="go">Draft now</span> under 50%, <span class="mid">Toss-up</span> 50 to 79%, <span class="wait">Can wait</span> 80%+.' : '') + '</p>';
-      h += '<p class="legend lg-short">' + (hidden ? 'Tap a card to reveal it. ' : 'Tap a card to see it big. ') + 'Buttons: spot and rating' +
-        (SHOWODDS && P.left > 0 ? ', % = chance of a better one later: <span class="go">draft now</span>, <span class="mid">toss-up</span>, <span class="wait">can wait</span>.' : '.') + '</p>';
+      h += '<p class="legend lg-short">' + (hidden ? 'Tap a card to reveal it. ' : 'Tap a card to see it big. ') + 'Buttons: spot and rating there' +
+        (SHOWODDS && P.left > 0 ? '. Full and green: take him now. Short and red: a better one is likely later.' : '.') + '</p>';
       h += '<div class="cards">' + (inPack.length ? inPack.map(cardHtml).join("") : '<p class="note" style="text-align:center;width:100%">All 3 cards drafted.</p>') + '</div><div class="actions pact">';
       if (hidden) h += '<button class="btn" data-pa="revealall">Reveal all</button>';
       var k = takenCount(), lastPack = P.left === 0, fitsLeft = P.pack.cards.some(function (c) { return !P.pack.taken[c.uid] && PE.fitSlots(c, PE.openMap(openSlots())).length; });
